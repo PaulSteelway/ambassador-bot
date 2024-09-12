@@ -155,7 +155,7 @@ bot.command('list', async (ctx) => {
 
             const data = rows.map(row => `Канал: ${row.channel_name}, Амбассадор: ${row.nickname}, Статус: ${row.status}, Исполнитель: ${row.executor}`).join('\n');
             const filePath = path.join(__dirname, 'ambassadors_list.txt');
-            fs.writeFileSync(filePath, data);
+            fs.writeFileSync(filePath, data,'utf8');
 
             ctx.replyWithDocument({ source: filePath, filename: 'ambassadors_list.txt' }).then(() => {
                 fs.unlinkSync(filePath);
@@ -178,7 +178,7 @@ bot.command('list', async (ctx) => {
             if (rows.length > 20) {
                 const data = rows.map(row => `Канал: ${row.channel_name}, Амбассадор: ${row.nickname}, Статус: ${row.status}`).join('\n');
                 const filePath = path.join(__dirname, 'your_ambassadors_list.txt');
-                fs.writeFileSync(filePath, data);
+                fs.writeFileSync(filePath, data,'utf8');
 
                 ctx.replyWithDocument({ source: filePath, filename: 'your_ambassadors_list.txt' }).then(() => {
                     fs.unlinkSync(filePath);
