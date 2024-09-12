@@ -1,10 +1,14 @@
 require('dotenv').config();
 const { Telegraf } = require('telegraf');
+const fs = require('fs');
+const path = require('path');
 const db = require('./database');
 const bot = new Telegraf(process.env.BOT_TOKEN);
-const admins = JSON.parse(process.env.ADMINS);
 
-// Проверка, является ли пользователь админом
+// Получаем массив администраторов из .env
+const admins = process.env.ADMINS.split(',').map(admin => admin.trim());
+
+// Функция для проверки, является ли пользователь администратором
 const isAdmin = (id) => admins.includes(id.toString());
 
 // Команда для добавления нового канала
@@ -110,7 +114,7 @@ bot.command('delete', (ctx) => {
     );
 });
 
-// Включаем инлайн режим
+// Инлайн режим для поиска каналов
 bot.on('inline_query', async (ctx) => {
     const query = ctx.inlineQuery.query;
 
@@ -132,13 +136,14 @@ bot.on('inline_query', async (ctx) => {
         }
     );
 });
+
+// Команда для списка каналов/амбассадоров
 bot.command('list', async (ctx) => {
     const userId = ctx.from.id;
     const username = ctx.from.username;
-    const isAdmin = process.env.ADMINS.split(',').includes(userId.toString()); // Сравниваем с массивом ID админов из .env
 
-    // Если пользователь админ, выгружаем всех амбассадоров в файл
-    if (isAdmin) {
+    if (isAdmin(userId)) {
+        // Если пользователь админ
         db.all('SELECT * FROM channels', (err, rows) => {
             if (err) {
                 return ctx.reply('Ошибка при получении данных.');
@@ -148,27 +153,19 @@ bot.command('list', async (ctx) => {
                 return ctx.reply('Нет амбассадоров в базе данных.');
             }
 
-            // Формируем данные для файла
             const data = rows.map(row => `Канал: ${row.channel_name}, Амбассадор: ${row.nickname}, Статус: ${row.status}, Исполнитель: ${row.executor}`).join('\n');
-
-            // Путь к временному файлу
             const filePath = path.join(__dirname, 'ambassadors_list.txt');
-
-            // Записываем данные в текстовый файл
             fs.writeFileSync(filePath, data);
 
-            // Отправляем файл админу
             ctx.replyWithDocument({ source: filePath, filename: 'ambassadors_list.txt' }).then(() => {
-                // Удаляем файл после отправки
                 fs.unlinkSync(filePath);
             }).catch((err) => {
                 console.error('Ошибка отправки файла:', err);
                 ctx.reply('Ошибка при отправке файла.');
             });
         });
-    } 
-    // Если пользователь не админ, выводим его амбассадоров
-    else {
+    } else {
+        // Если пользователь не админ
         db.all('SELECT * FROM channels WHERE executor = ?', [username], (err, rows) => {
             if (err) {
                 return ctx.reply('Ошибка при получении данных.');
@@ -179,31 +176,24 @@ bot.command('list', async (ctx) => {
             }
 
             if (rows.length > 20) {
-                // Формируем данные для файла
                 const data = rows.map(row => `Канал: ${row.channel_name}, Амбассадор: ${row.nickname}, Статус: ${row.status}`).join('\n');
-
-                // Путь к временному файлу
                 const filePath = path.join(__dirname, 'your_ambassadors_list.txt');
-
-                // Записываем данные в текстовый файл
                 fs.writeFileSync(filePath, data);
 
-                // Отправляем файл пользователю
                 ctx.replyWithDocument({ source: filePath, filename: 'your_ambassadors_list.txt' }).then(() => {
-                    // Удаляем файл после отправки
                     fs.unlinkSync(filePath);
                 }).catch((err) => {
                     console.error('Ошибка отправки файла:', err);
                     ctx.reply('Ошибка при отправке файла.');
                 });
             } else {
-                // Формируем сообщение для пользователя
                 const ambassadorsList = rows.map(row => `Канал: ${row.channel_name}, Амбассадор: ${row.nickname}, Статус: ${row.status}`).join('\n');
                 ctx.reply(`Ваши амбассадоры:\n${ambassadorsList}`);
             }
         });
     }
 });
+
 // Запуск бота
 bot.launch();
 console.log('Бот запущен');
