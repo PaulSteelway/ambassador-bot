@@ -12,9 +12,6 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV="production"
 
-ENV TOKEN=${TOKEN}
-ENV ADMINS=${ADMINS}
-
 # Throw-away build stage to reduce size of final image
 FROM base as build
 
@@ -28,7 +25,6 @@ RUN npm ci
 
 # Copy application code
 COPY --link . .
-
 
 # Final stage for app image
 FROM base
