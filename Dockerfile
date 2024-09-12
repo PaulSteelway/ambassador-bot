@@ -20,16 +20,16 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
 
 # Install node modules
-COPY --link package-lock.json package.json ./
+COPY package-lock.json package.json ./
 RUN npm ci
 
 # Copy application code
-COPY --link . .
+COPY . .
 
 # Final stage for app image
 FROM base
 
-# Copy built application
+# Copy built application from the build stage
 COPY --from=build /app /app
 
 # Setup sqlite3 on a separate volume
