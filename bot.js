@@ -13,7 +13,7 @@ bot.command('add', (ctx) => {
     const executor = ctx.from.username;
 
     if (!channel_name || !nickname) {
-        return ctx.reply('Usage: /add_ambassador {channel_name} {nickname}');
+        return ctx.reply('Используй: /add_ambassador {channel_name} {nickname}');
     }
 
     db.run(
